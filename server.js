@@ -16,8 +16,10 @@ import notFoundMiddleware from './middleware/not-found.js'
 //DB
 import connectDB from './db/connect.js';
 
-//routers
+import authenticateUser from './middleware/authentication.js'
 
+//routers
+import { authenticationRouter, propertyRouter, userRouter } from './routes/index.js'
 
 const app = express();
 dotenv.config();
@@ -47,6 +49,10 @@ app.use(cookieParser(process.env.JWT_SECRET));
 
 
 app.get('/', (req, res) => res.send('<h3> PropertyFinder v2! </h3>'))
+
+app.use('/api/v1/auth', authenticationRouter)
+app.use('/api/v1/property', authenticateUser, propertyRouter)
+app.use('/api/v1/user', authenticateUser, userRouter)
 
 app.use(notFoundMiddleware)
 app.use(errorHandlerMiddleware)

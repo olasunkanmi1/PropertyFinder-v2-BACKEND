@@ -1,7 +1,7 @@
+import mongoose from 'mongoose';
 import Property from '../models/Property.js'
 import { StatusCodes } from 'http-status-codes';
-import { BadRequestError, UnAuthenticatedError } from '../errors/index.js'
-import { createTokenUser, attachCookiesToResponse, } from '../utils/index.js';
+import { BadRequestError, NotFoundError, UnAuthenticatedError } from '../errors/index.js'
 
 // SAVE PROPERTY
 const saveProperty = async (req, res) => {
@@ -16,4 +16,25 @@ const getSavedProperties = async (req, res) => {
     res.status(StatusCodes.OK).json({ savedProperties });
 };
 
-export { saveProperty, getSavedProperties }
+// REMOVE SAVED PROPERTY
+const unsaveProperty = async (req, res) => {
+    const { externalID } = req.params;
+
+    const property = await Property.findOne({ externalID });
+    if(!property) {
+        throw new NotFoundError(`No property with externalID: ${externalID}`)
+    }
+
+    await property.deleteOne();
+    res.status(StatusCodes.OK).json({ msg: 'Success! Property removed.' });
+}
+
+// REMOVE ALL SAVED PROPERTY
+const unsaveAllProperties = async (req, res) => {
+    const property = mongoose.model('Property');
+    
+    await property.deleteMany({ user: req.user.userId });
+    res.status(StatusCodes.OK).json({ msg: 'Success! All Saved Properties removed.' });
+}
+
+export { saveProperty, getSavedProperties, unsaveProperty, unsaveAllProperties }

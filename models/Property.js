@@ -18,6 +18,11 @@ const PropertySchema = new mongoose.Schema({
         name: { type: String, required: true },
     },
     externalID: { type: String, required: true },
-});
+    user: {
+        type: mongoose.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    }
+}, {timestamps: true});
 
 export default mongoose.model('Property', PropertySchema)

@@ -8,8 +8,8 @@ const authenticateUser = async (req, res, next) => {
     }
 
     try {
-        const { firstName, lastName, userId } = isTokenValid({token});
-        req.user = { firstName, lastName, userId };
+        const { firstName, lastName, email, userId } = isTokenValid({token});
+        req.user = { firstName, lastName, email, userId };
         next();
     } catch (error) {
         throw new UnAuthenticatedError('Authentication Invalid');

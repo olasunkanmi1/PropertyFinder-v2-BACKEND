@@ -7,7 +7,7 @@ import { BadRequestError, NotFoundError, UnAuthenticatedError } from '../errors/
 const saveProperty = async (req, res) => {
     req.body.user = req.user.userId
     const property = await Property.create(req.body)
-    res.status(StatusCodes.CREATED).json({ property });
+    res.status(StatusCodes.OK).json({ property });
 };
 
 // GET SAVED PROPERTIES

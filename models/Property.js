@@ -10,7 +10,7 @@ const PropertySchema = new mongoose.Schema({
     baths: { type: String, required: true },
     area: { type: Number, required: true },
     isVerified: { type: Boolean, required: true },
-    rentFrequency: { type: String, required: true },
+    rentFrequency: { type: String },
     agency: { 
         logo: {
             url: { type: String, required: true },

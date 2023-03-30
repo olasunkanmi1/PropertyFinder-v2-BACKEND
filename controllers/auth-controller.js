@@ -32,30 +32,42 @@ const register = async (req, res) => {
 }
 
 const verifyEmail = async (req, res) => {
-    const verificationToken = req.query.token;
-    const email = req.query.email;
+    const { verificationToken, email, fromDropdown } = req.body;
+    let msg;
 
     const user = await User.findOne({ email });
-  
-    if (!user) {
-      throw new UnAuthenticatedError('Verification Failed');
-    }
-  
-    if (user.isVerified) {
-      throw new BadRequestError('User already verified');
-    }
+    
+    if(fromDropdown) {
+        await sendVerificationEmail({
+            name: user.firstName,
+            email: user.email,
+            verificationToken: user.verificationToken
+        })
 
-    if (user.verificationToken !== verificationToken) {
-      throw new UnAuthenticatedError('Verification Failed');
+        msg = 'Please check your email to verify'
+    } else {
+        if (!user) {
+          throw new UnAuthenticatedError('Verification Failed');
+        }
+      
+        if (user.isVerified) {
+          throw new BadRequestError('User already verified');
+        }
+    
+        if (user.verificationToken !== verificationToken) {
+          throw new UnAuthenticatedError('Verification Failed');
+        }
+
+        user.isVerified = true
+        user.verified = Date.now();
+        user.verificationToken = '';
+      
+        await user.save();
+        msg = 'Email verified successfully'
     }
   
-    user.isVerified = true
-    user.verified = Date.now();
-    user.verificationToken = '';
   
-    await user.save();
-  
-    res.status(StatusCodes.OK).json({ msg: 'Email verified successfully' });
+    res.status(StatusCodes.OK).json({ msg });
 };
 
 const login = async (req, res) => {

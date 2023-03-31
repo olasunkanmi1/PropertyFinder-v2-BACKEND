@@ -30,7 +30,7 @@ if(process.env.NODE_ENV !== 'production') {
 
 const corsOptions = {
     // origin: "http://localhost:3000",
-    origin: "https://propertyfinder.vercel.app/",
+    origin: "https://propertyfinder.vercel.app",
     credentials: true,
 };
 

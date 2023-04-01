@@ -19,6 +19,8 @@ const attachCookiesToResponse = ({ res, user }) => {
         signed: true,
         sameSite: 'none'
     });
+
+    res.setHeader('Access-Control-Allow-Origin', process.env.CORSORIGIN);
 }
 
 export { createJWT, isTokenValid, attachCookiesToResponse }

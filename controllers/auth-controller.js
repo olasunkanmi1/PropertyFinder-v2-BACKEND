@@ -31,11 +31,12 @@ const register = async (req, res) => {
     res.status(StatusCodes.CREATED).json({msg: 'Account created successfully'})
 }
 
-const verifyEmail = async (req, res) => {
+const verifyEmail = async (req, res, next) => {
     const { verificationToken, email, fromDropdown } = req.body;
     let msg;
 
     const user = await User.findOne({ email });
+    const token = req.signedCookies.token;
     
     if(fromDropdown) {
         await sendVerificationEmail({
@@ -56,6 +57,20 @@ const verifyEmail = async (req, res) => {
     
         if (user.verificationToken !== verificationToken) {
           throw new UnAuthenticatedError('Verification Failed');
+        }
+
+        if(token) {
+          try {
+            const { userId } = isTokenValid({token});
+
+            if(userId === user._id) {
+              const updatedUser = await User.findOne({ _id: userId });
+              const tokenUser = createTokenUser(updatedUser);
+              attachCookiesToResponse({ res, user: tokenUser });
+            }
+          } catch (error) {
+            next();
+          }
         }
 
         user.isVerified = true
@@ -104,7 +119,7 @@ const logout = async (req, res) => {
 const forgotPassword = async (req, res) => {
     const { email } = req.body;
     if (!email) {
-      throw new CustomError.BadRequestError('Please provide valid email');
+      throw new BadRequestError('Please provide valid email');
     }
   
     const user = await User.findOne({ email });
@@ -134,12 +149,11 @@ const forgotPassword = async (req, res) => {
 };
 
 const resetPassword = async (req, res) => {
-    const passwordToken = req.query.token;
-    const email = req.query.email;
-    const { password } = req.body;
+    const { passwordToken, email, password } = req.body;
+    console.log('ptok', passwordToken)
 
     if (!passwordToken || !email || !password) {
-      throw new CustomError.BadRequestError('Please provide all values');
+      throw new BadRequestError('Please provide all values');
     }
     const user = await User.findOne({ email });
   

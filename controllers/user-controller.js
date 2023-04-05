@@ -2,6 +2,8 @@ import User from '../models/User.js'
 import { StatusCodes } from 'http-status-codes';
 import { BadRequestError, UnAuthenticatedError } from '../errors/index.js'
 import { createTokenUser, attachCookiesToResponse, } from '../utils/index.js';
+import {v2 as cloudinary} from 'cloudinary';
+import fs from 'fs';
 
 // SHOW CURRENT USER
 const showCurrentUser = async (req, res) => {
@@ -10,7 +12,7 @@ const showCurrentUser = async (req, res) => {
 
 // UPDATE USER
 const updateUser = async (req, res) => {
-    const { email, firstName, lastName } = req.body;
+    const { email, firstName, lastName, photoUrl } = req.body;
     if (!email || !firstName || !lastName) {
       throw new BadRequestError('Please provide all values');
     }
@@ -19,6 +21,7 @@ const updateUser = async (req, res) => {
     user.email = email;
     user.firstName = firstName;
     user.lastName = lastName;
+    user.photoUrl = photoUrl;
   
     await user.save();
   
@@ -45,4 +48,14 @@ const updateUserPassword = async (req, res) => {
     res.status(StatusCodes.OK).json({ msg: 'Success! Password Updated.' });
 };
 
-export { showCurrentUser, updateUser, updateUserPassword }
+const updateUserImage = async (req, res) => {
+  const result = await cloudinary.uploader.upload(req.files.image.tempFilePath, {
+    use_filename: true,
+    folder: 'propertyfinder-bayut'
+  });
+
+  fs.unlinkSync(req.files.image.tempFilePath); //remove tmp files
+  return res.status(StatusCodes.OK).json({ image: { src: result.secure_url }});
+}
+
+export { showCurrentUser, updateUser, updateUserPassword, updateUserImage }

@@ -8,6 +8,8 @@ import xss from 'xss-clean';
 import mongoSanitize from 'express-mongo-sanitize';
 import rateLimiter from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import fileUpload from 'express-fileupload';
+import {v2 as cloudinary} from 'cloudinary';
 
 // middleware
 import errorHandlerMiddleware from './middleware/error-handler.js'
@@ -23,6 +25,13 @@ import { authenticationRouter, propertyRouter, userRouter } from './routes/index
 
 const app = express();
 dotenv.config();
+
+// cloudinary config
+cloudinary.config({
+    cloud_name: process.env.CLOUD_NAME,
+    api_key: process.env.CLOUD_API_KEY,
+    api_secret: process.env.CLOUD_API_SECRET,
+});
 
 if(process.env.NODE_ENV !== 'production') {
     app.use(morgan('dev'))
@@ -40,13 +49,13 @@ app.use(
     max: 60,
   })
 );
-app.use(cors(corsOptions))
-app.use(express.json())
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(fileUpload({ useTempFiles: true })); //useTempFiles allow to use req.files.image.tempFilePath in controller
 app.use(helmet());
 app.use(xss());
 app.use(mongoSanitize());
 app.use(cookieParser(process.env.JWT_SECRET));
-
 
 app.get('/', (req, res) => res.send('<h3> PropertyFinder v2! </h3>'))
 

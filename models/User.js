@@ -27,6 +27,7 @@ const UserSchema = new mongoose.Schema({
             message: 'Please provide a valid email'
         }
     },
+    photoUrl: { type: String, default: '' },
     password: {
         type: String,
         required: [true, 'Please provide password'],

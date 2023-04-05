@@ -1,7 +1,7 @@
 import User from '../models/User.js'
 import { StatusCodes } from 'http-status-codes';
 import { BadRequestError, UnAuthenticatedError } from '../errors/index.js'
-import { createTokenUser, attachCookiesToResponse, sendVerificationEmail, sendResetPasswordEmail, createHash } from '../utils/index.js';
+import { createTokenUser, attachCookiesToResponse, sendVerificationEmail, sendResetPasswordEmail, createHash, isTokenValid } from '../utils/index.js';
 import crypto from 'crypto'
 
 const register = async (req, res) => {
@@ -51,36 +51,49 @@ const verifyEmail = async (req, res, next) => {
           throw new UnAuthenticatedError('Verification Failed');
         }
       
-        if (user.isVerified) {
-          throw new BadRequestError('User already verified');
-        }
+        // if (user.isVerified) {
+        //   throw new BadRequestError('User already verified');
+        // }
     
-        if (user.verificationToken !== verificationToken) {
-          throw new UnAuthenticatedError('Verification Failed');
-        }
-
-        if(token) {
-          try {
-            const { userId } = isTokenValid({token});
-
-            if(userId === user._id) {
-              const updatedUser = await User.findOne({ _id: userId });
-              const tokenUser = createTokenUser(updatedUser);
-              attachCookiesToResponse({ res, user: tokenUser });
-            }
-          } catch (error) {
-            next();
-          }
-        }
-
+        // if (user.verificationToken !== verificationToken) {
+        //   throw new UnAuthenticatedError('Verification Failed');
+        // }
+        
         user.isVerified = true
         user.verified = Date.now();
         user.verificationToken = '';
-      
+        
         await user.save();
         msg = 'Email verified successfully'
+        
+        if(token) {
+          try {
+            const { userId } = isTokenValid({token});
+            console.log('userId', userId)
+
+            if(userId !== user._id) {
+              const updatedUser = await User.findOne({ _id: userId });
+              console.log('updatedUser', updatedUser)
+              const tokenUser = createTokenUser(updatedUser);
+
+              const oneDay = 1000 * 60 * 60 * 24;
+              res.cookie('test-token', 'test-value', {
+                httpOnly: true,
+                expires: new Date(Date.now() + oneDay),
+                secure: true,
+                signed: true,
+                sameSite: 'none'
+              });
+              // attachCookiesToResponse({ res, user: tokenUser });
+            }
+          } catch (error) {
+            console.log(error)
+          }
+        }
     }
   
+    res.setHeader('Access-Control-Allow-Origin', process.env.CORSORIGIN);
+res.setHeader('Access-Control-Allow-Credentials', 'true');
   
     res.status(StatusCodes.OK).json({ msg });
 };
@@ -150,7 +163,6 @@ const forgotPassword = async (req, res) => {
 
 const resetPassword = async (req, res) => {
     const { passwordToken, email, password } = req.body;
-    console.log('ptok', passwordToken)
 
     if (!passwordToken || !email || !password) {
       throw new BadRequestError('Please provide all values');

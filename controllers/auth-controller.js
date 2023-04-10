@@ -31,12 +31,11 @@ const register = async (req, res) => {
     res.status(StatusCodes.CREATED).json({msg: 'Account created successfully'})
 }
 
-const verifyEmail = async (req, res, next) => {
+const verifyEmail = async (req, res) => {
     const { verificationToken, email, fromDropdown } = req.body;
     let msg;
 
     const user = await User.findOne({ email });
-    const token = req.signedCookies.token;
     
     if(fromDropdown) {
         await sendVerificationEmail({
@@ -47,53 +46,21 @@ const verifyEmail = async (req, res, next) => {
 
         msg = 'Please check your email to verify'
     } else {
-        if (!user) {
-          throw new UnAuthenticatedError('Verification Failed');
-        }
-      
-        // if (user.isVerified) {
-        //   throw new BadRequestError('User already verified');
-        // }
-    
-        // if (user.verificationToken !== verificationToken) {
-        //   throw new UnAuthenticatedError('Verification Failed');
-        // }
-        
-        user.isVerified = true
-        user.verified = Date.now();
-        user.verificationToken = '';
-        
-        await user.save();
-        msg = 'Email verified successfully'
-        
-        if(token) {
-          try {
-            const { userId } = isTokenValid({token});
-            console.log('userId', userId)
-
-            if(userId !== user._id) {
-              const updatedUser = await User.findOne({ _id: userId });
-              console.log('updatedUser', updatedUser)
-              const tokenUser = createTokenUser(updatedUser);
-
-              const oneDay = 1000 * 60 * 60 * 24;
-              res.cookie('test-token', 'test-value', {
-                httpOnly: true,
-                expires: new Date(Date.now() + oneDay),
-                secure: true,
-                signed: true,
-                sameSite: 'none'
-              });
-              // attachCookiesToResponse({ res, user: tokenUser });
-            }
-          } catch (error) {
-            console.log(error)
-          }
-        }
-    }
+      if (!user) {
+        throw new UnAuthenticatedError('Verification Failed');
+      }
   
-    res.setHeader('Access-Control-Allow-Origin', process.env.CORSORIGIN);
-res.setHeader('Access-Control-Allow-Credentials', 'true');
+      if (user.verificationToken !== verificationToken) {
+        throw new UnAuthenticatedError('Verification Failed');
+      }
+      
+      user.isVerified = true
+      user.verified = Date.now();
+      user.verificationToken = '';
+      
+      await user.save();
+      msg = 'Email verified successfully'
+    }
   
     res.status(StatusCodes.OK).json({ msg });
 };

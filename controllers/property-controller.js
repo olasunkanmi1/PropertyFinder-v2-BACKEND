@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import Property from '../models/Property.js'
 import { StatusCodes } from 'http-status-codes';
-import { BadRequestError, NotFoundError, UnAuthenticatedError } from '../errors/index.js'
+import { NotFoundError } from '../errors/index.js'
+import { checkPermissions } from '../utils/index.js';
 
 // SAVE PROPERTY
 const saveProperty = async (req, res) => {
@@ -24,6 +25,8 @@ const unsaveProperty = async (req, res) => {
     if(!property) {
         throw new NotFoundError(`No property with externalID: ${externalID}`)
     }
+
+    checkPermissions(req.user, property.user)
 
     await property.deleteOne();
     res.status(StatusCodes.OK).json({ msg: 'Success! Property removed.' });

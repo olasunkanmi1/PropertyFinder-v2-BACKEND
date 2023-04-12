@@ -17,7 +17,9 @@ const attachCookiesToResponse = ({ res, user }) => {
         expires: new Date(Date.now() + oneDay),
         secure: true,
         signed: true,
-        sameSite: 'none'
+        sameSite: 'none',
+        domain: process.env.DOMAIN,
+        path: '/'
     });
 }
 

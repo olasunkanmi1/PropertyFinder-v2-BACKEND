@@ -55,7 +55,8 @@ app.use(fileUpload({ useTempFiles: true })); //useTempFiles allow to use req.fil
 app.use(helmet());
 app.use(xss());
 app.use(mongoSanitize());
-app.use(cookieParser(process.env.JWT_SECRET));
+// app.use(cookieParser(process.env.JWT_SECRET));
+app.use(cookieParser());
 
 app.get('/', (req, res) => res.send('<h3> PropertyFinder v2! </h3>'))
 

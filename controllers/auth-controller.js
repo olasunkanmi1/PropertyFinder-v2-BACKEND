@@ -2,7 +2,7 @@ import User from '../models/User.js'
 import { StatusCodes } from 'http-status-codes';
 import { BadRequestError, UnAuthenticatedError } from '../errors/index.js'
 import { createTokenUser, sendVerificationEmail, sendResetPasswordEmail, createHash, 
-  // attachCookiesToResponse 
+  attachCookiesToResponse 
 } from '../utils/index.js';
 import crypto from 'crypto'
 
@@ -21,8 +21,8 @@ const register = async (req, res) => {
     const verificationToken = crypto.randomBytes(40).toString('hex');
     
     const user = await User.create({ firstName, lastName, email, password, verificationToken });
-    // const tokenUser = createTokenUser(user);
-    // attachCookiesToResponse({res, user: tokenUser});
+    const tokenUser = createTokenUser(user);
+    attachCookiesToResponse({res, user: tokenUser});
 
     await sendVerificationEmail({
         name: user.firstName,
@@ -85,9 +85,9 @@ const login = async (req, res) => {
     }
 
     const tokenUser = createTokenUser(user);
-    // attachCookiesToResponse({ res, user: tokenUser });
+    attachCookiesToResponse({ res, user: tokenUser });
 
-    res.status(StatusCodes.OK).json({user: tokenUser})
+    res.status(StatusCodes.OK).json({msg: 'Logged in successfully'})
 }
 
 const logout = async (req, res) => {

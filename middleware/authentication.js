@@ -3,8 +3,7 @@ import User from "../models/User.js";
 import { isTokenValid } from "../utils/index.js";
 
 const authenticateUser = async (req, res, next) => {
-    // const token = req.signedCookies.token;
-    const token = req.cookies.token;
+    const token = req.signedCookies.token;
     
     if(!token) {
         throw new UnAuthenticatedError('Authentication Invalid');

@@ -14,7 +14,6 @@ import {v2 as cloudinary} from 'cloudinary';
 // middleware
 import errorHandlerMiddleware from './middleware/error-handler.js'
 import notFoundMiddleware from './middleware/not-found.js'
-import { createProxyMiddleware } from 'http-proxy-middleware';
 
 //DB
 import connectDB from './db/connect.js';
@@ -38,11 +37,6 @@ if(process.env.NODE_ENV !== 'production') {
     app.use(morgan('dev'))
 }
 
-const proxy = createProxyMiddleware({
-    target: process.env.PROXY_URL,
-    changeOrigin: true,
-});
-
 const corsOptions = {
     origin: process.env.CORSORIGIN,
     credentials: true,
@@ -65,7 +59,7 @@ app.use(cookieParser(process.env.JWT_SECRET));
 
 app.get('/', (req, res) => res.send('<h3> PropertyFinder v2! </h3>'))
 
-app.use('/api/v1/auth', proxy, authenticationRouter)
+app.use('/api/v1/auth', authenticationRouter)
 app.use('/api/v1/property', authenticateUser, propertyRouter)
 app.use('/api/v1/user', authenticateUser, userRouter)
 

@@ -2,6 +2,16 @@ import { UnAuthenticatedError } from "../errors/index.js";
 import User from "../models/User.js";
 import { isTokenValid } from "../utils/index.js";
 
+const userObj = (user) => {
+    return {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        isVerified: user.isVerified,
+        photoUrl: user.photoUrl,
+    }
+}
+
 const authenticateUser = async (req, res, next) => {
     const token = req.signedCookies.token;
     
@@ -12,17 +22,10 @@ const authenticateUser = async (req, res, next) => {
     try {
         const { userId } = isTokenValid({token});
         const user = await User.findOne({ _id: userId })
-        const obj = {
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            userId: userId,
-            isVerified: user.isVerified,
-            verificationToken: user.verificationToken,
-            photoUrl: user.photoUrl,
-        }
+        const obj = userObj(user)
 
         if(user) {
+            obj.userId = userId;
             req.user = obj;
         } else {
             throw new UnAuthenticatedError('Authentication Invalid');
@@ -33,4 +36,4 @@ const authenticateUser = async (req, res, next) => {
     }
 }
 
-export default authenticateUser
+export { authenticateUser, userObj }

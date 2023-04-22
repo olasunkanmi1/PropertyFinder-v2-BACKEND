@@ -14,11 +14,10 @@ import {v2 as cloudinary} from 'cloudinary';
 // middleware
 import errorHandlerMiddleware from './middleware/error-handler.js'
 import notFoundMiddleware from './middleware/not-found.js'
+import { authenticateUser } from './middleware/authentication.js'
 
 //DB
 import connectDB from './db/connect.js';
-
-import authenticateUser from './middleware/authentication.js'
 
 //routers
 import { authenticationRouter, propertyRouter, userRouter } from './routes/index.js'

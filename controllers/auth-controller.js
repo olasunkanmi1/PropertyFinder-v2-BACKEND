@@ -1,10 +1,12 @@
 import User from '../models/User.js'
+import Property from '../models/Property.js'
 import { StatusCodes } from 'http-status-codes';
 import { BadRequestError, UnAuthenticatedError } from '../errors/index.js'
 import { createTokenUser, sendVerificationEmail, sendResetPasswordEmail, createHash, 
   attachCookiesToResponse 
 } from '../utils/index.js';
 import crypto from 'crypto'
+import { userObj } from '../middleware/authentication.js';
 
 const register = async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
@@ -30,7 +32,9 @@ const register = async (req, res) => {
         verificationToken: user.verificationToken
     })
 
-    res.status(StatusCodes.CREATED).json({msg: 'Account created successfully'})
+    const obj = userObj(user)
+
+    res.status(StatusCodes.CREATED).json({user: obj, msg: 'Account created successfully'})
 }
 
 const verifyEmail = async (req, res) => {
@@ -87,7 +91,10 @@ const login = async (req, res) => {
     const tokenUser = createTokenUser(user);
     attachCookiesToResponse({ res, user: tokenUser });
 
-    res.status(StatusCodes.OK).json({msg: 'Logged in successfully'})
+    const obj = userObj(user);
+    const savedProperties =  await Property.find({ user: user._id })
+
+    res.status(StatusCodes.OK).json({user: obj, savedProperties, msg: 'Logged in successfully'})
 }
 
 const logout = async (req, res) => {

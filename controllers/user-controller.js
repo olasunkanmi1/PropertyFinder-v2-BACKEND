@@ -9,24 +9,6 @@ const showCurrentUser = async (req, res) => {
     res.status(StatusCodes.OK).json({ user: req.user });
 };
 
-// UPDATE USER
-const updateUser = async (req, res) => {
-    const { email, firstName, lastName, photoUrl } = req.body;
-    if (!email || !firstName || !lastName) {
-      throw new BadRequestError('Please provide all values');
-    }
-    const user = await User.findOne({ _id: req.user.userId });
-  
-    user.email = email;
-    user.firstName = firstName;
-    user.lastName = lastName;
-    user.photoUrl = photoUrl;
-  
-    await user.save();
-  
-    res.status(StatusCodes.OK).json({ msg: 'Profile updated successfully' });
-};
-
 // UPDATE USER PASSWORD
 const updateUserPassword = async (req, res) => {
     const { oldPassword, newPassword } = req.body;
@@ -45,25 +27,43 @@ const updateUserPassword = async (req, res) => {
     res.status(StatusCodes.OK).json({ msg: 'Success! Password Updated.' });
 };
 
-// UPLOAD IMAGE
-const updateUserImage = async (req, res) => {
-  const result = await cloudinary.uploader.upload(req.files.image.tempFilePath, {
-    use_filename: true,
-    folder: 'propertyfinder-bayut',
-    upload_preset: 'pf-bayut'
-  });
+// UPDATE USER
+const updateUser = async (req, res) => {
+  const { email, firstName, lastName, photoUrl } = req.query.withFormData === 'true' ? req.query : req.body;
+  if (!email || !firstName || !lastName) {
+    throw new BadRequestError('Please provide all values');
+  }
+  
+  const {fieldsAndFreshImage, fieldsAndDeletePrevAndUploadNew} = req.query
+  const {fieldsAndDeletePrevWithoutUploadNew} = req.body;
+  const {public_id} = req.query.withFormData === 'true' ? req.query : req.body;
 
-  fs.unlinkSync(req.files.image.tempFilePath); //remove tmp files
-  return res.status(StatusCodes.OK).json({ image: { src: result.secure_url }});
-}
+  const formDataExist = fieldsAndFreshImage || fieldsAndDeletePrevAndUploadNew
+  const imgToDeleteExist = fieldsAndDeletePrevAndUploadNew || fieldsAndDeletePrevWithoutUploadNew
+  
+  const user = await User.findOne({ _id: req.user.userId });
+  user.email = email;
+  user.firstName = firstName;
+  user.lastName = lastName;
+  user.photoUrl = photoUrl;
+  
+  // DELETE IMAGE
+  if(imgToDeleteExist) await cloudinary.uploader.destroy(public_id);
 
-// DELETE IMAGE
-const deleteUserImage = async (req, res) => {
-  const { public_id } = req.params;
-  const decodedPublicId = decodeURIComponent(public_id);
+  // UPLOAD IMAGE
+  if(formDataExist) {
+    const result = await cloudinary.uploader.upload(req.files.image.tempFilePath, {
+      use_filename: true,
+      folder: 'propertyfinder-bayut',
+      upload_preset: 'pf-bayut'
+    });
+  
+    fs.unlinkSync(req.files.image.tempFilePath); //remove tmp files
+    user.photoUrl = result.secure_url
+  }
 
-  await cloudinary.uploader.destroy(decodedPublicId);
-  return res.status(StatusCodes.OK).json({ msg: 'Success! Image Deleted.'});
-}
+  await user.save();
+  res.status(StatusCodes.OK).json({ user, msg: 'Profile updated successfully' });
+};
 
-export { showCurrentUser, updateUser, updateUserPassword, updateUserImage, deleteUserImage }
+export { showCurrentUser, updateUserPassword, updateUser }

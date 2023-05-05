@@ -72,7 +72,7 @@ const verifyEmail = async (req, res) => {
 };
 
 const login = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, ptyToSaveOnLogin } = req.body;
 
     if(!email || !password) {
         throw new BadRequestError('please provide email and password');
@@ -80,21 +80,28 @@ const login = async (req, res) => {
     
     const user = await User.findOne({ email }).select('+password');
     if(!user) {
-        throw new UnAuthenticatedError('Invalid Credentials');
+      throw new UnAuthenticatedError('Invalid Credentials');
     }
-
+    
     const isPasswordCorrect = await user.comparePassword(password)
     if(!isPasswordCorrect) {
-        throw new UnAuthenticatedError('Invalid Credentials');
+      throw new UnAuthenticatedError('Invalid Credentials');
+    }
+    
+    const savedProperties =  await Property.find({ user: user._id });
+    const savedPropertiesIDs = savedProperties.map((pty) => pty.externalID);
+    const alreadySaved = ptyToSaveOnLogin ? savedPropertiesIDs.includes(ptyToSaveOnLogin.externalID) : undefined;
+    if(ptyToSaveOnLogin && !alreadySaved) {
+      ptyToSaveOnLogin.user = user._id;
+      const newProperty = await Property.create(ptyToSaveOnLogin);
+      savedProperties.push(newProperty); // Add the new property to the savedProperties array
     }
 
     const tokenUser = createTokenUser(user);
     attachCookiesToResponse({ res, user: tokenUser });
-
     const obj = userObj(user);
-    const savedProperties =  await Property.find({ user: user._id })
 
-    res.status(StatusCodes.OK).json({user: obj, savedProperties, msg: 'Logged in successfully'})
+    res.status(StatusCodes.OK).json({user: obj, savedProperties, alreadySaved, msg: 'Logged in successfully'})
 }
 
 const logout = async (req, res) => {

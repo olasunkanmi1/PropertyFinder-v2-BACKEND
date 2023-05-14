@@ -45,21 +45,31 @@ const updateUser = async (req, res) => {
   user.email = email;
   user.firstName = firstName;
   user.lastName = lastName;
-  user.photoUrl = photoUrl;
-  
-  // DELETE IMAGE
-  if(imgToDeleteExist) await cloudinary.uploader.destroy(public_id);
+  user.photoUrl = photoUrl.slice(1);
+
+  if(imgToDeleteExist) {
+    await cloudinary.uploader.destroy(public_id);
+    user.photoUrl = ''
+  } 
 
   // UPLOAD IMAGE
   if(formDataExist) {
-    const result = await cloudinary.uploader.upload(req.files.image.tempFilePath, {
-      use_filename: true,
-      folder: 'propertyfinder-bayut',
-      upload_preset: 'pf-bayut'
-    });
-  
-    fs.unlinkSync(req.files.image.tempFilePath); //remove tmp files
-    user.photoUrl = result.secure_url
+    try {
+      const result = await cloudinary.uploader.upload(req.files.image.tempFilePath, {
+        use_filename: true,
+        folder: 'propertyfinder-bayut',
+        upload_preset: 'pf-bayut'
+      });
+    
+      fs.unlinkSync(req.files.image.tempFilePath); //remove tmp files
+      user.photoUrl = result.secure_url
+    } catch (error) {
+      //reupload deleted image if imgToDeleteExist && formDataExist but deletion was already successful
+      if(imgToDeleteExist) {
+        await cloudinary.api.restore([public_id]);
+        user.photoUrl = photoUrl.slice(1)
+      }
+    }
   }
 
   await user.save();

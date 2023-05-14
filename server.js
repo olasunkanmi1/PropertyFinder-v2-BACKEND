@@ -45,7 +45,7 @@ app.set('trust proxy', 1);
 app.use(
   rateLimiter({
     windowMs: 15 * 60 * 1000, //15 mins
-    max: 60,
+    max: 100,
   })
 );
 app.use(cors(corsOptions));

@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { BadRequestError, UnAuthenticatedError } from '../errors/index.js'
 import {v2 as cloudinary} from 'cloudinary';
 import fs from 'fs';
+import crypto from 'crypto'
 
 // SHOW CURRENT USER
 const showCurrentUser = async (req, res) => {
@@ -42,10 +43,17 @@ const updateUser = async (req, res) => {
   const imgToDeleteExist = fieldsAndDeletePrevAndUploadNew || fieldsAndDeletePrevWithoutUploadNew
   
   const user = await User.findOne({ _id: req.user.userId });
+  const emailChanged = email !== user.email
+  if(user.isVerified && emailChanged) {
+   user.isVerified = false;
+   user.verificationToken = crypto.randomBytes(40).toString('hex');;
+  }
+
   user.email = email;
   user.firstName = firstName;
   user.lastName = lastName;
-  user.photoUrl = photoUrl.slice(1);
+  user.photoUrl = formDataExist ? photoUrl.slice(1) : photoUrl;
+
 
   if(imgToDeleteExist) {
     await cloudinary.uploader.destroy(public_id);

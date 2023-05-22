@@ -40,6 +40,7 @@ const register = async (req, res) => {
 const verifyEmail = async (req, res) => {
     const { verificationToken, email, fromDropdown } = req.body;
     let msg;
+    let samePersonLoggedIn = false
 
     const user = await User.findOne({ email });
     
@@ -66,9 +67,17 @@ const verifyEmail = async (req, res) => {
       
       await user.save();
       msg = 'Email verified successfully'
+
+      // check if same user is logged in so as to set user isVerified state on clientside to true without refreshing page
+      try {
+          const userEmailFromToken = req.user.email
+          if(email === userEmailFromToken) samePersonLoggedIn = true;
+      } catch (error) {
+        samePersonLoggedIn = false;
+      }
     }
   
-    res.status(StatusCodes.OK).json({ msg });
+    res.status(StatusCodes.OK).json({ msg, samePersonLoggedIn });
 };
 
 const login = async (req, res) => {

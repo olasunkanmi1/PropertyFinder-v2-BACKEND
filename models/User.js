@@ -40,12 +40,8 @@ const UserSchema = new mongoose.Schema({
     default: false,
   },
   verified: Date,
-  passwordToken: {
-    type: String,
-  },
-  passwordTokenExpirationDate: {
-    type: Date,
-  }
+  passwordToken: String,
+  passwordTokenExpirationDate: Date,
 });
 
 UserSchema.pre('save', async function() {

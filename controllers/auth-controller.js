@@ -53,7 +53,7 @@ const verifyEmail = async (req, res) => {
             verificationCode: user.verificationCode
         })
 
-        msg = 'Please check your email to verify'
+        msg = 'Please check your email for verification code'
     } else {
       if (!user) {
         throw new UnAuthenticatedError('Verification Failed');
@@ -166,6 +166,8 @@ const resetPassword = async (req, res) => {
         user.passwordToken = null;
         user.passwordTokenExpirationDate = null;
         await user.save();
+      } else {
+        throw new BadRequestError('Invalid link');
       }
     }
   

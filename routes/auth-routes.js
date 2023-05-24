@@ -5,7 +5,7 @@ import { authenticateUser } from '../middleware/authentication.js';
 const router = express.Router();
 
 router.post('/register', register)
-router.post('/verify-email', verifyEmail)
+router.post('/verify-email', authenticateUser, verifyEmail)
 router.post('/login', login)
 router.delete('/logout', authenticateUser, logout)
 

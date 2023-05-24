@@ -1,9 +1,9 @@
 import User from '../models/User.js'
 import { StatusCodes } from 'http-status-codes';
-import { BadRequestError, UnAuthenticatedError } from '../errors/index.js'
+import { BadRequestError, UnAuthenticatedError, ConflictError } from '../errors/index.js'
 import {v2 as cloudinary} from 'cloudinary';
 import fs from 'fs';
-import crypto from 'crypto'
+import generateCode from '../utils/generate-code.js';
 
 // SHOW CURRENT USER
 const showCurrentUser = async (req, res) => {
@@ -34,6 +34,11 @@ const updateUser = async (req, res) => {
   if (!email || !firstName || !lastName) {
     throw new BadRequestError('Please provide all values');
   }
+
+  const  userAlreadyExists = await User.findOne({ email });
+  if(userAlreadyExists) {
+      throw new ConflictError('Email already exist');
+  }
   
   const {fieldsAndFreshImage, fieldsAndDeletePrevAndUploadNew} = req.query
   const {fieldsAndDeletePrevWithoutUploadNew} = req.body;
@@ -46,7 +51,7 @@ const updateUser = async (req, res) => {
   const emailChanged = email !== user.email
   if(user.isVerified && emailChanged) {
    user.isVerified = false;
-   user.verificationToken = crypto.randomBytes(40).toString('hex');;
+   user.verificationCode = generateCode();
   }
 
   user.email = email;

@@ -1,9 +1,9 @@
 import User from '../models/User.js'
 import Property from '../models/Property.js'
 import { StatusCodes } from 'http-status-codes';
-import { BadRequestError, UnAuthenticatedError } from '../errors/index.js'
+import { BadRequestError, UnAuthenticatedError, ConflictError } from '../errors/index.js'
 import { createTokenUser, sendVerificationEmail, sendResetPasswordEmail, createHash, 
-  attachCookiesToResponse 
+  attachCookiesToResponse, generateCode
 } from '../utils/index.js';
 import crypto from 'crypto'
 import { userObj } from '../middleware/authentication.js';
@@ -17,19 +17,19 @@ const register = async (req, res) => {
 
     const  userAlreadyExists = await User.findOne({ email });
     if(userAlreadyExists) {
-        throw new BadRequestError('Email already exist');
+        throw new ConflictError('Email already exist');
     }
 
-    const verificationToken = crypto.randomBytes(40).toString('hex');
+    const verificationCode = generateCode();
     
-    const user = await User.create({ firstName, lastName, email, password, verificationToken });
+    const user = await User.create({ firstName, lastName, email, password, verificationCode });
     const tokenUser = createTokenUser(user);
     attachCookiesToResponse({res, user: tokenUser});
 
     await sendVerificationEmail({
         name: user.firstName,
         email: user.email,
-        verificationToken: user.verificationToken
+        verificationCode: user.verificationCode
     })
 
     const obj = userObj(user)
@@ -38,17 +38,19 @@ const register = async (req, res) => {
 }
 
 const verifyEmail = async (req, res) => {
-    const { verificationToken, email, fromDropdown } = req.body;
+    const { verificationCode, fromDropdown } = req.body;
     let msg;
-    let samePersonLoggedIn = false
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({  _id: req.user.userId });
     
     if(fromDropdown) {
+      user.verificationCode = generateCode();
+      await user.save();
+
         await sendVerificationEmail({
             name: user.firstName,
             email: user.email,
-            verificationToken: user.verificationToken
+            verificationCode: user.verificationCode
         })
 
         msg = 'Please check your email to verify'
@@ -57,27 +59,19 @@ const verifyEmail = async (req, res) => {
         throw new UnAuthenticatedError('Verification Failed');
       }
   
-      if (user.verificationToken !== verificationToken) {
-        throw new UnAuthenticatedError('Verification Failed');
+      if (user.verificationCode !== verificationCode) {
+        throw new BadRequestError('Invalid code');
       }
       
       user.isVerified = true
       user.verified = Date.now();
-      user.verificationToken = '';
+      user.verificationCode = '';
       
       await user.save();
       msg = 'Email verified successfully'
-
-      // check if same user is logged in so as to set user isVerified state on clientside to true without refreshing page
-      try {
-          const userEmailFromToken = req.user.email
-          if(email === userEmailFromToken) samePersonLoggedIn = true;
-      } catch (error) {
-        samePersonLoggedIn = false;
-      }
     }
   
-    res.status(StatusCodes.OK).json({ msg, samePersonLoggedIn });
+    res.status(StatusCodes.OK).json({ msg });
 };
 
 const login = async (req, res) => {

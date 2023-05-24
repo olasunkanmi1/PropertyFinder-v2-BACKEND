@@ -1,11 +1,16 @@
 import mongoose from 'mongoose';
 import Property from '../models/Property.js'
 import { StatusCodes } from 'http-status-codes';
-import { NotFoundError } from '../errors/index.js'
+import { NotFoundError, ConflictError } from '../errors/index.js'
 import { checkPermissions } from '../utils/index.js';
 
 // SAVE PROPERTY
 const saveProperty = async (req, res) => {
+    const propertyAlreadySaved = await Property.findOne({ user: req.user.userId, externalID: req.body.externalID });
+    if(propertyAlreadySaved) {
+      throw new ConflictError('Property already saved by user');
+    }
+    
     req.body.user = req.user.userId
     const property = await Property.create(req.body)
     res.status(StatusCodes.OK).json({ property });

@@ -22,7 +22,11 @@ const register = async (req, res) => {
 
     const verificationCode = generateCode();
     
-    const user = await User.create({ firstName, lastName, email, password, verificationCode });
+    const user = await User.create({ 
+      firstName: firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase(),
+      lastName: lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase(),
+      email, password, verificationCode 
+    });
     const tokenUser = createTokenUser(user);
     attachCookiesToResponse({res, user: tokenUser});
 
@@ -86,7 +90,7 @@ const login = async (req, res) => {
       throw new UnAuthenticatedError('Invalid Credentials');
     }
     
-    const isPasswordCorrect = await user.comparePassword(password)
+    const isPasswordCorrect = await user.comparePassword(password.toLowerCase())
     if(!isPasswordCorrect) {
       throw new UnAuthenticatedError('Invalid Credentials');
     }

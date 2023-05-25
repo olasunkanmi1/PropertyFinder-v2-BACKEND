@@ -34,11 +34,6 @@ const updateUser = async (req, res) => {
   if (!email || !firstName || !lastName) {
     throw new BadRequestError('Please provide all values');
   }
-
-  const  userAlreadyExists = await User.findOne({ email });
-  if(userAlreadyExists) {
-      throw new ConflictError('Email already exist');
-  }
   
   const {fieldsAndFreshImage, fieldsAndDeletePrevAndUploadNew} = req.query
   const {fieldsAndDeletePrevWithoutUploadNew} = req.body;
@@ -48,17 +43,22 @@ const updateUser = async (req, res) => {
   const imgToDeleteExist = fieldsAndDeletePrevAndUploadNew || fieldsAndDeletePrevWithoutUploadNew
   
   const user = await User.findOne({ _id: req.user.userId });
-  const emailChanged = email !== user.email
+  const emailChanged = email.toLowerCase() !== user.email
+  const  userAlreadyExists = await User.findOne({ email });
+
+  if(userAlreadyExists && emailChanged) {
+      throw new ConflictError('Email already exist');
+  }
+
   if(user.isVerified && emailChanged) {
    user.isVerified = false;
    user.verificationCode = generateCode();
   }
 
-  user.email = email;
-  user.firstName = firstName;
-  user.lastName = lastName;
+  user.email = email.toLowerCase();
+  user.firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+  user.lastName = lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase();
   user.photoUrl = formDataExist ? photoUrl.slice(1) : photoUrl;
-
 
   if(imgToDeleteExist) {
     await cloudinary.uploader.destroy(public_id);

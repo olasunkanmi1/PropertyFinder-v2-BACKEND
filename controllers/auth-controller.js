@@ -25,7 +25,9 @@ const register = async (req, res) => {
     const user = await User.create({ 
       firstName: firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase(),
       lastName: lastName.charAt(0).toUpperCase() + lastName.slice(1).toLowerCase(),
-      email, password, verificationCode 
+      email: email.toLowerCase(), 
+      password: password.toLowerCase(), 
+      verificationCode 
     });
     const tokenUser = createTokenUser(user);
     attachCookiesToResponse({res, user: tokenUser});
@@ -166,7 +168,7 @@ const resetPassword = async (req, res) => {
         user.passwordToken === createHash(passwordToken) &&
         user.passwordTokenExpirationDate > currentDate
       ) {
-        user.password = password;
+        user.password = password.toLowerCase();
         user.passwordToken = null;
         user.passwordTokenExpirationDate = null;
         await user.save();

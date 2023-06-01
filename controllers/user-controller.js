@@ -18,11 +18,11 @@ const updateUserPassword = async (req, res) => {
     }
     const user = await User.findOne({ _id: req.user.userId }).select('+password');
   
-    const isPasswordCorrect = await user.comparePassword(oldPassword);
+    const isPasswordCorrect = await user.comparePassword(oldPassword.toLowerCase());
     if (!isPasswordCorrect) {
       throw new UnAuthenticatedError('Invalid Credentials');
     }
-    user.password = newPassword;
+    user.password = newPassword.toLowerCase();
   
     await user.save();
     res.status(StatusCodes.OK).json({ msg: 'Success! Password Updated.' });

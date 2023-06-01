@@ -34,7 +34,7 @@ const UserSchema = new mongoose.Schema({
         required: [true, 'Please provide password'],
         minLength: 6,
         select: false,
-        lowercase: true
+        // lowercase: true
     },
     verificationCode: String,
   isVerified: {
